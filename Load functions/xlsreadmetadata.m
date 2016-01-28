@@ -13,7 +13,7 @@ end
 % varargin, pairs with label and number of columns e.g. {'Condition',2}
 
 if ~iscell(tabname)
-     error('Tabname should be a cell')
+    error('Tabname should be a cell')
 end
 
 
@@ -35,7 +35,8 @@ for j_sheet = 1:length(tabname)
         columnNr= find(ismember(header,varargin{i_var}));
         index = varargin{i_var+1};
         indexdata = both(headerrow+1:end,columnNr+index);
-        try timingbothi = ~any(cellfun(@(x) ...
+        
+        try timingbothi = ~all(cellfun(@(x) ...
                 isnan(x)|strcmpi(x,'#VALUE!')|strcmpi(x,'#REF!'),indexdata),2);
         catch
             timingbothi = ones(length(indexdata),1);
@@ -60,26 +61,30 @@ for j_sheet = 1:length(tabname)
             if iscell(value); value = cat(1,value); end
             if isnan(condition{i_row}); continue; end
             
-            time_i= ~cellfun(@isempty,regexpi(condition(i_row),'.*time|.*tijd')); 
- 
+            time_i= ~cellfun(@isempty,regexpi(condition(i_row),'.*time|.*tijd'));
+            
             field = deblank(condition{i_row});
             field = regexp(field,'\w*','match','once');
             
             if time_i
-                value = datetime(value,'ConvertFrom','excel');
-                [~, ~, ~, H, MN, S] = datevec(value);
-                value = H*3600+MN*60+S;
+                value = datestr(x2mdate(value),'HH:MM:SS.fff');
+                %value = datetime(value),'ConvertFrom','excel');
+                getvalue = @(x) sum(cell2mat(cellfun(@str2num,strsplit(x,':'),'uni',0)).*[3600 60 1]);
+                for i_row = 1:size(value,1)
+                    B(:,i_row) = getvalue(value(i_row,:));
+                end
+                value = B;
             end
             
             if ~isnan(field);
                 if ~isfield(x,field)
                     x.(field) = value;
                 else %add to existing field
-                     x.(field) =  [x.(field); value];
+                    x.(field) =  [x.(field); value];
                 end
             end
         end
-                
+        
         fields = fieldnames(x);
         datei= ~cellfun(@isempty,regexpi(fields,'.*date|.*datum|.*day|.*dag'));
         for i_date = find(datei)'
@@ -89,27 +94,26 @@ for j_sheet = 1:length(tabname)
                 x.(fields{i_date}) = v;
             elseif ~isnan(v)
                 if isnumeric(v);
-                    value = forcedateformat(x2mdate(v));
-                    %value = datetime(v,'ConvertFrom','excel');
+                    try  value = datestr(x2mdate(v));
+                    catch
+                        value = datetime(v,'ConvertFrom','excel');
+                    end
                 else
                     value = forcedateformat(v,'dd-mm-yyyy');
                 end
-            x.(fields{i_date}) = value;
+                x.(fields{i_date}) = value;
             end
-        end 
+        end
     end
     
 end
-
-
-
 
 end
 
 function dateout = forcedateformat(datein,varargin)
 % Force date format string based on the current date.
 %
-%recognizes: 
+%recognizes:
 %    strings: '19-Aug-2014' or '19-08-2014' or '19/08/2014'
 %    vectors: (now)/ 7.3583e+05
 if isnan(datein)
@@ -118,7 +122,7 @@ end
 
 A = regexp(datein,'\d*|\w*','match');
 
-%asume ymd,mdy,dym,dmy,myd,ydm   
+%asume ymd,mdy,dym,dmy,myd,ydm
 allperms = perms(1:3); %all possible permutations
 %1 =y, 2=m, 3 = d
 
@@ -128,7 +132,7 @@ if length(A)<3 %likely only yy and month
     A= [A,0];
     remove_size = allperms(:,3)~=3;
 else
-    remove_size = zeros(size(allperms,1),1);    
+    remove_size = zeros(size(allperms,1),1);
 end
 %1 =y, 2=m, 3 = d
 nums = cellfun(@(x) str2double(x),A);
@@ -154,7 +158,7 @@ C = A(allperms); %make strings
 for i_row = 1:size(C,1)
     x = strjoin(C(i_row,:),'-');
     try N{i_row} = etime(datevec(now),datevec(x,'yy-mm-dd'));
-    catch 
+    catch
         N{i_row} = nan;
     end
 end

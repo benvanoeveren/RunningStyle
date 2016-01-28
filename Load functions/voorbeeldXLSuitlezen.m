@@ -4,4 +4,4 @@ xlsfile = 'Metadata.xlsx';
 path_metadata = fullfile(path_data,xlsfile);
 [~,sheets] = xlsfinfo(path_metadata);
 
-X = xlsreadsettings(path_metadata,{'pp1'},1,'Label',[1],'Condition',[1 11]);
+X = xlsreadmetadata(path_metadata,{'pp1'},1,'Label',[1],'Condition',[1 11]);
