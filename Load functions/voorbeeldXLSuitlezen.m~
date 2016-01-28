@@ -1,0 +1,10 @@
+path_data = datapath;
+
+xlsfile = 'Metadata.xlsx';
+path_metadata = fullfile(path_data,xlsfile);
+[~,sheets] = xlsfinfo(path_metadata);
+
+'/Users/benvanoeveren/Documents/VU/Projecten/running style/RunningStyle/Data/Metadata.xlsx'
+
+xlsfname = fullfile(path,xlsfile);
+X = xlsreadsettings(xlsfname,{'TS'},1,'Label',[1],'Condition',[1 7]);
